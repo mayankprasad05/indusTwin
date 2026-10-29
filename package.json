@@ -1,0 +1,15 @@
+{
+  "name": "industwin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Industry 4.0 Digital Twin Dashboard for a simulated production line (learning project)",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "evaluate": "node scripts/evaluate-fault-classifier.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}

@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IndusTwin — Industry 4.0 Digital Twin Dashboard</title>
+  <style>
+    :root {
+      --bg: #03101a;
+      --panel: #071a2a;
+      --panel-2: #0b2538;
+      --line: #1d3a52;
+      --text: #e6f0f8;
+      --muted: #9fb6cc;
+      --accent: #4fd6ff;
+      --accent-2: #7d8aff;
+      --warn: #ffb454;
+      --bad: #ff5a6e;
+      --good: #5fe3a1;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: var(--sans); }
+    body { min-height: 100vh; }
+
+    a { color: var(--accent); }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      background: radial-gradient(circle at 30% 30%, #1c6eff, #0a3a6b 70%);
+      box-shadow: 0 0 0 1px var(--accent), 0 0 18px rgba(79, 214, 255, 0.25);
+      display: grid; place-items: center;
+      color: #fff; font-weight: 700; font-size: 16px;
+    }
+    h1 { font-size: 16px; margin: 0; letter-spacing: 0.3px; }
+    .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .head-spacer { flex: 1; }
+    .badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    main { padding: 18px 22px 60px; }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 980px) {
+      .grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card h2 .hint { color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 11px; }
+
+    .gauge-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 600px) {
+      .gauge-row { grid-template-columns: 1fr; }
+    }
+
+    .gauge {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      height: 100%;
+    }
+    .gauge .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+    .gauge .big { font-family: var(--mono); font-size: 22px; line-height: 1.1; margin-top: 4px; }
+    .gauge .unit { color: var(--muted); font-size: 12px; font-family: var(--mono); }
+    .gauge .sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .gauge .bar {
+      margin-top: 8px;
+      height: 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .gauge .bar i {
+      display: block;
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.2s ease, background 0.2s ease;
+    }
+
+    .state-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+    .state-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .state-idle { background: rgba(159,182,204,0.12); color: var(--muted); border-color: rgba(159,182,204,0.25); }
+    .state-starting { background: rgba(79,214,255,0.12); color: var(--accent); border-color: rgba(79,214,255,0.3); }
+    .state-running { background: rgba(95,227,161,0.12); color: var(--good); border-color: rgba(95,227,161,0.3); }
+    .state-warning { background: rgba(255,180,84,0.14); color: var(--warn); border-color: rgba(255,180,84,0.35); }
+    .state-fault { background: rgba(255,90,110,0.16); color: var(--bad); border-color: rgba(255,90,110,0.4); }
+    .state-shutdown { background: rgba(159,182,204,0.12); color: var(--muted); border-color: rgba(159,182,204,0.25); }
+
+    .chart {
+      width: 100%;
+      height: 160px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .chart canvas { display: block; width: 100%; height: 100%; }
+    .chart .legend { position: absolute; left: 10px; top: 8px; font-size: 11px; color: var(--muted); display: flex; gap: 10px; }
+    .chart .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+
+    .log {
+      max-height: 160px;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--muted);
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+    .log .row { display: flex; gap: 10px; }
+    .log .t { color: var(--accent); width: 48px; flex: 0 0 48px; }
+    .log .msg { color: var(--text); word-break: break-word; }
+    .log .msg.bad { color: var(--bad); }
+    .log .msg.warn { color: var(--warn); }
+    .log .msg.good { color: var(--good); }
+    .log .msg.accent { color: var(--accent); }
+
+    .twin {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 780px) { .twin { grid-template-columns: 1fr; } }
+    .twin .layer {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+    .twin .layer .tag {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .twin .layer .val { font-family: var(--mono); color: var(--text); }
+    .twin .layer .sub { color: var(--muted); margin-top: 4px; }
+
+    .eval-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+    @media (max-width: 780px) { .eval-grid { grid-template-columns: 1fr; } }
+    .eval-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+    .eval-card .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .eval-card .name { text-transform: uppercase; letter-spacing: 1px; font-size: 10px; color: var(--accent); }
+    .eval-card .acc { font-family: var(--mono); font-size: 16px; }
+    .eval-card .bar { margin-top: 8px; height: 5px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+    .eval-card .bar i { display: block; height: 100%; border-radius: 4px; }
+    .eval-card .meta { margin-top: 6px; color: var(--muted); font-family: var(--mono); font-size: 11px; line-height: 1.6; }
+    .eval-card .matrix { margin-top: 8px; width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 10px; }
+    .eval-card .matrix td, .eval-card .matrix th { border: 1px solid var(--line); padding: 3px 4px; text-align: center; color: var(--text); }
+    .eval-card .matrix th { color: var(--muted); font-weight: 400; background: rgba(255,255,255,0.02); }
+    .eval-card .note { margin-top: 8px; font-size: 11px; color: var(--warn); }
+    .eval-foot { margin-top: 10px; font-size: 11px; color: var(--muted); font-family: var(--mono); line-height: 1.6; }
+
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 12px;
+      padding: 7px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+    }
+    .btn:hover { background: #13324a; border-color: var(--accent); }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: #0a3a6b; border-color: var(--accent); color: #dffaff; }
+    .btn.primary:hover { background: #134a86; }
+    .btn.danger { border-color: rgba(255,90,110,0.5); color: var(--bad); }
+    .btn.danger:hover { background: rgba(255,90,110,0.12); border-color: var(--bad); }
+    .btn.small { padding: 4px 8px; font-size: 11px; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .select-wrap { position: relative; }
+    .select-wrap select {
+      appearance: none;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px 30px 7px 10px;
+      font-size: 12px;
+      font-family: var(--sans);
+      cursor: pointer;
+      width: 100%;
+    }
+    .select-wrap::after {
+      content: "▾";
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .matrix {
+      font-size: 12px;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    .matrix th, .matrix td {
+      border: 1px solid var(--line);
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 11px;
+    }
+    .matrix th {
+      background: var(--panel-2);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 600;
+    }
+    .matrix td.cells { font-size: 10px; color: var(--muted); }
+    .matrix .check { color: var(--good); font-weight: 700; }
+    .matrix .partial { color: var(--warn); }
+
+    .inspector {
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: rgba(0,0,0,0.18);
+      padding: 12px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .inspector .ic { font-size: 28px; margin-bottom: 6px; }
+    .inspector .try {
+      margin-top: 8px;
+      display: inline-block;
+      color: var(--accent);
+      border-bottom: 1px solid transparent;
+      cursor: pointer;
+    }
+    .inspector .try:hover { border-bottom-color: var(--accent); }
+
+    .section { margin-bottom: 16px; }
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: var(--text);
+      letter-spacing: 0.3px;
+    }
+    .section .desc { color: var(--muted); font-size: 12px; margin: 4px 0 12px 0; }
+
+    .autonomous-bar {
+      display: flex;
+      gap: 4px;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 4px;
+    }
+    .autonomous-bar .seg {
+      flex: 1;
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+      padding: 4px 2px;
+      border-radius: 4px;
+      background: transparent;
+      transition: background 0.2s, color 0.2s;
+    }
+    .autonomous-bar .seg.active { background: #0a3a6b; color: var(--accent); }
+
+    .coverage {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .coverage .bar { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+    .coverage .bar i { display: block; height: 100%; background: var(--accent); width: 60%; }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 12px 22px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">IT</div>
+      <div>
+        <h1>IndusTwin</h1>
+        <div class="sub">Industry 4.0 Digital Twin Dashboard — simulated production line</div>
+      </div>
+    </div>
+    <div class="head-spacer"></div>
+    <span class="badge" id="scenarioBadge">Scenario: CNC Machining Center</span>
+    <span class="badge" id="connBadge"> Connected</span>
+  </header>
+
+  <main>
+    <section class="section">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h2>Machine Control</h2>
+          <div class="desc">Start, stop, reset, and switch autonomy mode for the simulated machine.</div>
+        </div>
+        <div class="controls">
+          <button class="btn primary" id="btnStart">Start</button>
+          <button class="btn danger" id="btnStop">Emergency Stop</button>
+          <button class="btn" id="btnReset">Reset</button>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:12px;">
+        <div class="select-wrap" style="width:260px;">
+          <select id="scenarioSelect">
+            <option value="cnc_machining">CNC Machining Center</option>
+            <option value="packaging_line">Packaging Line Station</option>
+            <option value="robotic_welding">Robotic Welding Cell</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="font-size:12px; color:var(--muted);">Autonomy: <span id="autonomyState" style="font-family:var(--mono); color:var(--muted);">off</span></div>
+          <div class="autonomous-bar" id="autonomyBar">
+            <div class="seg" data-level="monitoring">Monitor</div>
+            <div class="seg" data-level="advisory">Advisory</div>
+            <div class="seg" data-level="closed">Closed-loop</div>
+            <div class="seg" data-level="supervisory">Supervisory</div>
+          </div>
+          <button class="btn small" id="btnAutoOn">On</button>
+          <button class="btn small" id="btnAutoOff">Off</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Machine State</h2>
+      <div class="desc">The digital twin reflects the live simulated machine state, health, and recent control decisions.</div>
+      <div class="grid grid-3">
+        <div class="card">
+          <h2>Current State <span class="hint" id="stateHint"></span></h2>
+          <div style="display:flex; align-items:center; gap:12px; margin-top:6px;">
+            <span class="state-pill state-idle" id="statePill"><span class="dot"></span><span id="stateLabel">Idle</span></span>
+            <div style="font-family:var(--mono); font-size:12px; color:var(--muted);">
+              Uptime <span id="uptime">0.0</span>s &middot; Cycles <span id="cycles">0</span> &middot; Faults <span id="faults">0</span>
+            </div>
+          </div>
+          <div class="coverage" style="margin-top:10px;">
+            <span>Machine health</span>
+            <div class="bar"><i id="healthBar"></i></div>
+            <span id="healthLabel" style="font-family:var(--mono);">100%</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Anomaly Confidence</h2>
+          <div style="display:flex; align-items:center; gap:10px; margin-top:4px;">
+            <div style="flex:1;">
+              <div style="font-family:var(--mono); font-size:26px; line-height:1;" id="anomalyScore">0.00</div>
+              <div class="sub">composite score (recent window)</div>
+            </div>
+            <div class="gauge" style="width:120px;">
+              <div class="bar"><i id="anomalyBar" style="width:0%; background:var(--good);"></i></div>
+            </div>
+          </div>
+          <div class="sub" style="margin-top:8px;" id="anomalyTrend">Waiting for data…</div>
+        </div>
+
+        <div class="card">
+          <h2>Injected Anomaly <span class="hint" id="anomalyHint"></span></h2>
+          <div id="anomalyPanel" style="margin-top:4px; font-size:12px; color:var(--muted);">
+            None active.
+          </div>
+          <div class="controls" style="margin-top:8px;">
+            <button class="btn small" id="btnInject">Inject vibration spike</button>
+            <button class="btn small" id="btnInjectTemp">Inject temperature drift</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Live Sensor Telemetry</h2>
+      <div class="desc">Multivariate readings from the machine. Use the chart to watch trends; gauges show current values against nominal.</div>
+      <div class="sub" id="dataSourceNote" style="margin-top:4px; font-family:var(--mono);"></div>
+      <div class="grid grid-2">
+        <div class="card" style="grid-column: span 2;">
+          <h2>Signal Trends <span class="hint">rolling window of key signals</span></h2>
+          <div class="chart" id="trendChart">
+            <div class="legend" id="chartLegend"></div>
+            <canvas id="trendCanvas"></canvas>
+          </div>
+        </div>
+
+        <div class="gauge-row">
+          <div class="gauge">
+            <div class="label" id="gTempLabel">Temperature</div>
+            <div class="big"><span id="gTemp">--</span><span class="unit" id="gTempUnit">°C</span></div>
+            <div class="bar"><i id="gTempBar" style="width:0%; background:var(--good);"></i></div>
+            <div class="sub" id="gTempSub">nominal --</div>
+          </div>
+          <div class="gauge">
+            <div class="label" id="gVibLabel">Vibration</div>
+            <div class="big"><span id="gVib">--</span><span class="unit" id="gVibUnit">mm/s</span></div>
+            <div class="bar"><i id="gVibBar" style="width:0%; background:var(--good);"></i></div>
+            <div class="sub" id="gVibSub">nominal --</div>
+          </div>
+        </div>
+        <div class="gauge-row">
+          <div class="gauge">
+            <div class="label" id="gPresLabel">Pressure</div>
+            <div class="big"><span id="gPres">--</span><span class="unit" id="gPresUnit">bar</span></div>
+            <div class="bar"><i id="gPresBar" style="width:0%; background:var(--good);"></i></div>
+            <div class="sub" id="gPresSub">nominal --</div>
+          </div>
+          <div class="gauge">
+            <div class="label" id="gPowLabel">Power Draw</div>
+            <div class="big"><span id="gPow">--</span><span class="unit" id="gPowUnit">%</span></div>
+            <div class="bar"><i id="gPowBar" style="width:0%; background:var(--good);"></i></div>
+            <div class="sub" id="gPowSub">nominal --</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Control Log</h2>
+      <div class="desc">Every control, mode, and state change is recorded so the twin’s decisions are auditable.</div>
+      <div class="log" id="controlLog"><div class="row"><span class="t">--</span><span class="msg muted">Awaiting telemetry…</span></div></div>
+    </section>
+
+    <section class="section">
+      <h2>Digital Twin — Physical vs Virtual</h2>
+      <div class="desc">The twin is a live virtual representation of the simulated machine: current state, recent signal behavior, and the health assessment derived from the data.</div>
+      <div class="twin">
+        <div class="layer">
+          <div class="tag">Physical (simulated)</div>
+          <div class="val">Machine <span id="twinPhysicalId">M-01</span></div>
+          <div class="sub">State: <span id="twinPhysicalState" style="color:var(--text);">Idle</span></div>
+          <div class="sub">Cycles: <span id="twinPhysicalCycles" style="color:var(--text);">0</span></div>
+        </div>
+        <div class="layer">
+          <div class="tag">Virtual Representation</div>
+          <div class="val">Digital Twin <span id="twinVirtualId">M-01-DT</span></div>
+          <div class="sub">Health index: <span id="twinHealth" style="color:var(--text);">100%</span></div>
+          <div class="sub">Anomaly score: <span id="twinScore" style="color:var(--text);">0.00</span></div>
+        </div>
+        <div class="layer">
+          <div class="tag">Twin Link</div>
+          <div class="val">Live stream</div>
+          <div class="sub">WebSocket @ <span id="twinLink" style="color:var(--accent);">—</span></div>
+          <div class="sub">Latency: <span id="twinLatency" style="color:var(--text);">—</span></div>
+        </div>
+        <div class="layer">
+          <div class="tag">Why a Twin?</div>
+          <div class="sub" style="color:var(--text);">
+            Monitor the physical asset from a virtual model, detect drift early, test "what-if" changes, and automate responses with a human-in-the-loop.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Fault Classification <span class="hint">measured against the dataset's own labels</span></h2>
+      <div class="desc">The anomaly score above is unsupervised — it rises, but nothing tells you whether it is right. This panel is the answer: a classifier trained offline on the rig's recorded condition labels, scored on cycles it never saw. Accuracy, chance level and the confusion matrix come from an honest blocked split, not a shuffled one.</div>
+      <div class="sub" id="evalNote" style="font-family:var(--mono);">Loading evaluation…</div>
+      <div class="eval-grid" id="evalGrid"></div>
+      <div class="eval-foot" id="evalFoot"></div>
+    </section>
+
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  const WS_URL = "ws://" + window.location.host + "/ws";
+  const MAX_POINTS = 120;
+
+  // UI refs
+  const $ = (id) => document.getElementById(id);
+  const statePill = $("statePill");
+  const stateLabel = $("stateLabel");
+  const stateHint = $("stateHint");
+  const uptimeEl = $("uptime");
+  const cyclesEl = $("cycles");
+  const faultsEl = $("faults");
+  const healthBar = $("healthBar");
+  const healthLabel = $("healthLabel");
+  const anomalyScoreEl = $("anomalyScore");
+  const anomalyBar = $("anomalyBar");
+  const anomalyTrend = $("anomalyTrend");
+  const anomalyPanel = $("anomalyPanel");
+  const anomalyHint = $("anomalyHint");
+  const controlLog = $("controlLog");
+  const scenarioBadge = $("scenarioBadge");
+  const connBadge = $("connBadge");
+  const scenarioSelect = $("scenarioSelect");
+  const dataSourceNote = $("dataSourceNote");
+  const autonomySegs = document.querySelectorAll("#autonomyBar .seg");
+  const btnAutoOn = $("btnAutoOn");
+  const btnAutoOff = $("btnAutoOff");
+  const trendCanvas = $("trendCanvas");
+  const chartLegend = $("chartLegend");
+  const ctx = trendCanvas.getContext("2d");
+
+  // Twin refs
+  const twinPhysicalId = $("twinPhysicalId");
+  const twinPhysicalState = $("twinPhysicalState");
+  const twinPhysicalCycles = $("twinPhysicalCycles");
+  const twinHealth = $("twinHealth");
+  const twinScore = $("twinScore");
+  const twinLatency = $("twinLatency");
+
+  // Widget refs for captions
+  const gTempLabel = $("gTempLabel");
+  const gVibLabel = $("gVibLabel");
+  const gPresLabel = $("gPresLabel");
+  const gPowLabel = $("gPowLabel");
+  const gTemp = $("gTemp");
+  const gVib = $("gVib");
+  const gPres = $("gPres");
+  const gPow = $("gPow");
+  const gTempUnit = $("gTempUnit");
+  const gVibUnit = $("gVibUnit");
+  const gPresUnit = $("gPresUnit");
+  const gPowUnit = $("gPowUnit");
+  const gTempBar = $("gTempBar");
+  const gVibBar = $("gVibBar");
+  const gPresBar = $("gPresBar");
+  const gPowBar = $("gPowBar");
+  const gTempSub = $("gTempSub");
+  const gVibSub = $("gVibSub");
+  const gPresSub = $("gPresSub");
+  const gPowSub = $("gPowSub");
+
+  // Which signals appear on the chart and gauges
+  const CHART_SIGNALS = ["temperature", "vibration", "pressure", "power"];
+  const GAUGE_MAP = {
+    temperature: {
+      label: "Temperature",
+      value: "gTemp",
+      unit: "gTempUnit",
+      bar: "gTempBar",
+      sub: "gTempSub",
+    },
+    vibration: {
+      label: "Vibration",
+      value: "gVib",
+      unit: "gVibUnit",
+      bar: "gVibBar",
+      sub: "gVibSub",
+    },
+    pressure: {
+      label: "Pressure",
+      value: "gPres",
+      unit: "gPresUnit",
+      bar: "gPresBar",
+      sub: "gPresSub",
+    },
+    power: { label: "Power Draw", value: "gPow", unit: "gPowUnit", bar: "gPowBar", sub: "gPowSub" },
+  };
+
+  // Normalized color helpers
+  function colorForHealth(h) {
+    if (h >= 0.85) return "var(--good)";
+    if (h >= 0.65) return "var(--warn)";
+    return "var(--bad)";
+  }
+  function colorForScore(s) {
+    if (s < 0.35) return "var(--good)";
+    if (s < 0.7) return "var(--warn)";
+    return "var(--bad)";
+  }
+
+  // State of the chart buffer
+  const series = {};
+  for (const s of CHART_SIGNALS) {
+    series[s] = [];
+  }
+  let lastFrame = null;
+  let reconnectTimer = null;
+  let connected = false;
+  let ws = null;
+  // Transient operator notice (e.g. a refused command) shown in the anomaly card.
+  let uiNotice = null;
+
+  function resizeCanvas() {
+    const rect = trendCanvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    trendCanvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    trendCanvas.height = Math.max(1, Math.floor(rect.height * dpr));
+    trendCanvas.style.width = rect.width + "px";
+    trendCanvas.style.height = rect.height + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function drawChart() {
+    const W = trendCanvas.width / (window.devicePixelRatio || 1);
+    const H = trendCanvas.height / (window.devicePixelRatio || 1);
+    ctx.clearRect(0, 0, W, H);
+
+    if (W < 10 || H < 10) return;
+
+    const pad = { top: 14, bottom: 16, left: 6, right: 6 };
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    // Each series is scaled to its own range. The signals carry very different
+    // units (bar, W, °C, mm/s), so a shared axis would flatten the small ones
+    // into straight lines. There are no numeric y labels, so this stays honest.
+    const scale = {};
+    for (const s of CHART_SIGNALS) {
+      const vals = series[s].filter((v) => Number.isFinite(v));
+      if (!vals.length) {
+        scale[s] = { lo: 0, hi: 1 };
+        continue;
+      }
+      let lo = Math.min(...vals);
+      let hi = Math.max(...vals);
+      if (hi - lo < 1e-6) {
+        lo -= 0.5;
+        hi += 0.5;
+      }
+      const margin = (hi - lo) * 0.1;
+      scale[s] = { lo: lo - margin, hi: hi + margin };
+    }
+
+    function x(i) {
+      return pad.left + (i / Math.max(1, MAX_POINTS - 1)) * plotW;
+    }
+    function y(s, v) {
+      const r = scale[s] || { lo: 0, hi: 1 };
+      return pad.top + plotH - ((v - r.lo) / (r.hi - r.lo)) * plotH;
+    }
+
+    // Background gridlines
+    ctx.strokeStyle = "rgba(255,255,255,0.05)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const yy = pad.top + (i / 4) * plotH;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, yy);
+      ctx.lineTo(W - pad.right, yy);
+      ctx.stroke();
+    }
+
+    const colors = {
+      temperature: "#ff6b6b",
+      vibration: "#ffb454",
+      pressure: "#4fd6ff",
+      power: "#7d8aff",
+    };
+
+    for (const s of CHART_SIGNALS) {
+      const pts = series[s];
+      if (pts.length < 2) continue;
+      ctx.strokeStyle = colors[s] || "#fff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < pts.length; i++) {
+        const xx = x(i);
+        const yy = y(s, pts[i]);
+        if (i === 0) ctx.moveTo(xx, yy);
+        else ctx.lineTo(xx, yy);
+      }
+      ctx.stroke();
+    }
+
+    // Latest value dots
+    for (const s of CHART_SIGNALS) {
+      const pts = series[s];
+      if (pts.length < 1) continue;
+      const last = pts[pts.length - 1];
+      const xx = x(pts.length - 1);
+      const yy = y(s, last);
+      ctx.fillStyle = colors[s] || "#fff";
+      ctx.beginPath();
+      ctx.arc(xx, yy, 3, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function pushSeries(name, value) {
+    if (!Number.isFinite(value)) return;
+    series[name].push(value);
+    if (series[name].length > MAX_POINTS) {
+      series[name].shift();
+    }
+  }
+
+  function updateLegend() {
+    const colors = {
+      temperature: "#ff6b6b",
+      vibration: "#ffb454",
+      pressure: "#4fd6ff",
+      power: "#7d8aff",
+    };
+    chartLegend.innerHTML = CHART_SIGNALS
+      .map(
+        (s) =>
+          `<span><i style="background:${colors[s]}"></i>${s}</span>`
+      )
+      .join("");
+  }
+
+  function setGauge(map, sensor) {
+    // A malformed reading must not take down the whole render loop.
+    if (!map || !sensor || !Number.isFinite(sensor.value)) return;
+    const val = sensor.value;
+    const nominal = sensor.nominal ?? (sensor.min + sensor.max) / 2;
+    const min = sensor.min ?? 0;
+    const max = sensor.max ?? 1;
+
+    const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+    const usePct = Math.max(0, Math.min(100, (val / (max || 1)) * 100));
+
+    const barEl = $(map.bar);
+    if (barEl) {
+      barEl.style.width = usePct + "%";
+      const ratio = (val - min) / (max - min);
+      let color = "var(--good)";
+      if (ratio > 0.85) color = "var(--bad)";
+      else if (ratio > 0.65) color = "var(--warn)";
+      barEl.style.background = color;
+    }
+    const valEl = $(map.value);
+    if (valEl) valEl.textContent = val.toFixed(2);
+    const unitEl = $(map.unit);
+    if (unitEl) unitEl.textContent = sensor.unit || "";
+    const subEl = $(map.sub);
+    if (subEl) subEl.textContent = "nominal " + (nominal != null ? nominal.toFixed(1) : "--");
+    const labelEl = $(map.label);
+    if (labelEl) labelEl.textContent = map.label.toUpperCase();
+  }
+
+  function updateMachineUI(frame) {
+    if (!frame) return;
+    lastFrame = frame;
+
+    // Always refresh the state/health panel from the latest frame we receive,
+    // including periodic refresh frames from the server.
+    const st = frame.state || "idle";
+
+    // State pill
+    statePill.className = "state-pill state-" + st;
+    const names = {
+      idle: "Idle",
+      starting: "Starting",
+      running: "Running",
+      warning: "Warning",
+      fault: "Fault",
+      shutdown: "Shutdown",
+    };
+    stateLabel.textContent = names[st] || st;
+    stateHint.textContent = st ? st.toUpperCase() : "";
+
+    // Where the numbers come from: recorded rig data or the synthetic model.
+    const ds = frame.dataSource;
+    if (ds) {
+      if (ds.kind === "recorded") {
+        dataSourceNote.textContent =
+          `Recorded · ${ds.name} · cycle ${ds.cycleNumber}/${ds.cyclesTotal}` +
+          (ds.block ? ` (${ds.block})` : "");
+        dataSourceNote.style.color = "var(--accent)";
+      } else {
+        dataSourceNote.textContent = "Synthetic simulation — no recorded dataset in use";
+        dataSourceNote.style.color = "var(--muted)";
+      }
+    }
+
+    // Autonomy mode is server-side state, so the segments and On/Off buttons
+    // always reflect what the twin is actually doing (not just the last click).
+    const auto = frame.autonomy || { on: false, level: "manual" };
+    autonomySegs.forEach((seg) => {
+      seg.classList.toggle("active", Boolean(auto.on) && seg.dataset.level === auto.level);
+    });
+    btnAutoOn.disabled = Boolean(auto.on);
+    btnAutoOff.disabled = !auto.on;
+    const autoLabel = $("autonomyState");
+    if (autoLabel) {
+      autoLabel.textContent = auto.on ? auto.level : "off";
+      autoLabel.style.color = auto.on ? "var(--good)" : "var(--muted)";
+    }
+
+    uptimeEl.textContent = (frame.uptimeSeconds ?? 0).toFixed(1);
+    cyclesEl.textContent = frame.cycleCount ?? 0;
+    faultsEl.textContent = frame.faultCount ?? 0;
+
+    // Health index: simple heuristic from anomaly score and state
+    let health = 1;
+    if (frame.anomalyScore != null) health -= frame.anomalyScore * 0.8;
+    if (frame.state === "fault") health = 0.25;
+    else if (frame.state === "warning") health = 0.6;
+    else if (frame.state === "shutdown") health = 0.4;
+    health = Math.max(0, Math.min(1, health));
+    const pct = Math.round(health * 100);
+    healthBar.style.width = pct + "%";
+    healthBar.style.background = colorForHealth(health);
+    healthLabel.textContent = pct + "%";
+
+    // Anomaly score
+    const score = frame.anomalyScore ?? 0;
+    anomalyScoreEl.textContent = score.toFixed(2);
+    anomalyBar.style.width = (score * 100) + "%";
+    anomalyBar.style.background = colorForScore(score);
+
+    // Trend text
+    if (frame.stats && frame.stats.trends) {
+      const parts = [];
+      for (const [sig, t] of Object.entries(frame.stats.trends)) {
+        if (!t || t.trend === "unknown") continue;
+        parts.push(sig + " " + t.trend);
+      }
+      if (parts.length) {
+        anomalyTrend.textContent = parts.join(" · ");
+        anomalyTrend.style.color = score > 0.6 ? "var(--warn)" : "var(--muted)";
+      } else {
+        anomalyTrend.textContent = "Stable enough to read trends…";
+        anomalyTrend.style.color = "var(--muted)";
+      }
+    } else {
+      anomalyTrend.textContent = "Collecting samples…";
+      anomalyTrend.style.color = "var(--muted)";
+    }
+
+    // Anomaly panel
+    if (frame.anomaly) {
+      anomalyPanel.innerHTML =
+        `<strong>Signal:</strong> ${frame.anomaly.signal} · <strong>Severity:</strong> ${frame.anomaly.severity.toFixed(1)} · <strong>Type:</strong> ${frame.anomaly.type || "injected"}<br/><span class="sub">Active until t=${frame.anomaly.until}</span>`;
+      anomalyHint.textContent = "ACTIVE";
+      anomalyHint.style.color = "var(--bad)";
+    } else if (uiNotice && Date.now() < uiNotice.until) {
+      anomalyPanel.textContent = uiNotice.text;
+      anomalyHint.textContent = "NOT READY";
+      anomalyHint.style.color = "var(--warn)";
+    } else {
+      uiNotice = null;
+      anomalyPanel.innerHTML = "None active.";
+      anomalyHint.textContent = "CLEAR";
+      anomalyHint.style.color = "var(--good)";
+    }
+
+    // Twin panel
+    twinPhysicalId.textContent = frame.machineId || "M-01";
+    twinPhysicalState.textContent = names[frame.state] || frame.state;
+    twinPhysicalCycles.textContent = frame.cycleCount ?? 0;
+    twinHealth.textContent = pct + "%";
+    twinScore.textContent = score.toFixed(2);
+
+    // Gauges
+    const s = frame.sensors;
+    for (const [key, map] of Object.entries(GAUGE_MAP)) {
+      setGauge(map, s[key] || null);
+    }
+  }
+
+  function appendLog(frame) {
+    if (!frame || !frame.controlLog) return;
+    const entries = frame.controlLog;
+    const added = entries.slice(controlLog._lastCount || 0);
+    controlLog._lastCount = entries.length;
+
+    // Remove placeholder
+    if (controlLog.children.length === 1 && controlLog.children[0].querySelector(".muted")) {
+      controlLog.innerHTML = "";
+    }
+
+    for (const e of added) {
+      const row = document.createElement("div");
+      row.className = "row";
+      const t = document.createElement("span");
+      t.className = "t";
+      t.textContent = String(e.t).padStart(3, " ");
+      const msg = document.createElement("span");
+      msg.className = "msg";
+      if (e.type === "state" && e.action === "fault_reached") msg.classList.add("bad");
+      else if (e.action === "anomaly_injected") msg.classList.add("warn");
+      else if (e.action === "start") msg.classList.add("good");
+      else if (e.action === "e_stop") msg.classList.add("bad");
+      else if (e.type === "mode") msg.classList.add("accent");
+
+      let text = "";
+      if (e.action === "start") text = "Started machine";
+      else if (e.action === "e_stop") text = "Emergency stop";
+      else if (e.action === "fault_reached") text = "Fault: " + (e.signal || "?");
+      else if (e.action === "anomaly_injected")
+        text = "Anomaly injected on " + e.signal + " (sev " + e.severity + ")";
+      else if (e.type === "mode")
+        text = (e.action === "autonomous_on" ? "Autonomy ON" : "Autonomy OFF") +
+          " · " + (e.mode || "");
+      else if (e.type === "control")
+        text = e.action + " — " + (e.reason || "");
+      else text = JSON.stringify(e);
+
+      msg.textContent = text;
+      row.appendChild(t);
+      row.appendChild(msg);
+      controlLog.appendChild(row);
+    }
+
+    // Trim
+    while (controlLog.children.length > 60) {
+      controlLog.removeChild(controlLog.firstChild);
+    }
+    controlLog.scrollTop = controlLog.scrollHeight;
+  }
+
+  function applyFrame(frame) {
+    if (!frame) {
+      // Local UI reset with no telemetry payload yet; just redraw.
+      drawChart();
+      return;
+    }
+
+    updateMachineUI(frame);
+    appendLog(frame);
+
+    // Push chart series
+    const s = frame.sensors || {};
+    for (const sig of CHART_SIGNALS) {
+      pushSeries(sig, s[sig] ? s[sig].value : NaN);
+    }
+
+    drawChart();
+  }
+
+  function sendCmd(cmd) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(cmd));
+    }
+  }
+
+  function connect() {
+    if (ws) {
+      ws.onclose = null;
+      ws.close();
+    }
+    connBadge.textContent = " Connecting…";
+    connBadge.style.color = "var(--warn)";
+    ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+      connected = true;
+      connBadge.textContent = " Connected";
+      connBadge.style.color = "var(--good)";
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+    };
+    ws.onmessage = (event) => {
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      if (data.type === "error") {
+        console.warn("Server message:", data.message);
+        // Surface refusals in the UI instead of only the console.
+        uiNotice = { text: data.message, until: Date.now() + 5000 };
+        anomalyPanel.textContent = data.message;
+        anomalyHint.textContent = "NOT READY";
+        anomalyHint.style.color = "var(--warn)";
+        return;
+      }
+      applyFrame(data);
+    };
+    ws.onclose = () => {
+      connected = false;
+      connBadge.textContent = " Disconnected";
+      connBadge.style.color = "var(--bad)";
+      reconnectTimer = setTimeout(connect, 2500);
+    };
+    ws.onerror = () => {
+      ws.close();
+    };
+  }
+
+  // Control buttons
+  $("btnStart").addEventListener("click", () => sendCmd({ type: "start" }));
+  $("btnStop").addEventListener("click", () => sendCmd({ type: "stop" }));
+  $("btnReset").addEventListener("click", () => {
+    sendCmd({ type: "reset" });
+    // Reset local state too
+    for (const s of CHART_SIGNALS) series[s] = [];
+    controlLog.innerHTML =
+      '<div class="row"><span class="t">--</span><span class="msg muted">Reset. Awaiting telemetry…</span></div>';
+    controlLog._lastCount = 0;
+    applyFrame(null);
+  });
+
+  // Scenario selector: switching recreates the twin on the server, so the
+  // badge and the selector are refreshed from the response.
+  scenarioSelect.addEventListener("change", (e) => {
+    const val = e.target.value;
+    scenarioBadge.textContent = "Scenario: switching…";
+    fetch("/api/switchScenario", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scenario: val }),
+    })
+      .then((r) => r.json())
+      .then((j) => {
+        scenarioBadge.textContent = j.ok
+          ? "Scenario: " + (j.name || j.scenario)
+          : "Scenario: " + (j.error || "switch failed");
+      })
+      .catch(() => {
+        scenarioBadge.textContent = "Scenario: switch failed";
+      });
+  });
+
+  // Keep the selector in sync with the twin the server is actually running.
+  fetch("/api/scenarios")
+    .then((r) => r.json())
+    .then((j) => {
+      if (Array.isArray(j.scenarios) && j.scenarios.length) {
+        scenarioSelect.innerHTML = j.scenarios
+          .map((s) => `<option value="${s.key}">${s.name}</option>`)
+          .join("");
+      }
+      if (j.currentKey) scenarioSelect.value = j.currentKey;
+      if (j.current) scenarioBadge.textContent = "Scenario: " + j.current;
+    })
+    .catch(() => {});
+
+  // Autonomy: the server owns the mode, the UI only expresses intent. The next
+  // frame redraws the segments and the On/Off disabled states from real state.
+  btnAutoOn.addEventListener("click", () => {
+    const current = lastFrame && lastFrame.autonomy ? lastFrame.autonomy.level : "monitoring";
+    sendCmd({
+      type: "setAutonomous",
+      on: true,
+      level: current === "manual" ? "monitoring" : current,
+    });
+  });
+  btnAutoOff.addEventListener("click", () => sendCmd({ type: "setAutonomous", on: false }));
+
+  autonomySegs.forEach((seg) => {
+    seg.addEventListener("click", () => {
+      sendCmd({ type: "setAutonomous", on: true, level: seg.dataset.level });
+    });
+  });
+
+  // Anomaly injection buttons
+  $("btnInject").addEventListener("click", () => sendCmd({ type: "injectAnomaly", signal: "vibration", severity: 1.0, duration: 8 }));
+  $("btnInjectTemp").addEventListener("click", () => sendCmd({ type: "injectAnomaly", signal: "temperature", severity: 1.2, duration: 10 }));
+
+
+  // ---- Fault classification results (offline evaluation, served as JSON) --
+  const evalNote = $("evalNote");
+  const evalGrid = $("evalGrid");
+  const evalFoot = $("evalFoot");
+
+  const accColor = (acc) => (acc >= 0.9 ? "var(--good)" : acc >= 0.7 ? "var(--warn)" : "var(--bad)");
+
+  function renderModelEval(data) {
+    if (!data || !Array.isArray(data.order)) throw new Error("unexpected payload");
+
+    const generated = data.generatedAt ? new Date(data.generatedAt).toLocaleString() : "—";
+    evalNote.textContent =
+      `${data.dataset?.cycles ?? "?"} recorded load cycles · ${data.tasks[data.order[0]]?.trainSize + data.tasks[data.order[0]]?.testSize || "?"} used · generated ${generated}`;
+
+    evalGrid.innerHTML = data.order
+      .map((key) => {
+        const t = data.tasks[key];
+        if (!t) return "";
+        const short = t.classValues.map((v) => String(v));
+        const rand = t.randomSplit ? (t.randomSplit.accuracy * 100).toFixed(1) + "%" : "—";
+
+        const header =
+          '<tr><th>true ↓ / pred →</th>' +
+          short.map((s) => `<th>${s}</th>`).join("") +
+          "</tr>";
+
+        const rows = t.confusion
+          .map((row, i) => {
+            const total = row.reduce((a, b) => a + b, 0) || 1;
+            const cells = row
+              .map((n, j) => {
+                const share = n / total;
+                const bg = i === j ? `rgba(95,227,161,${(0.10 + share * 0.5).toFixed(2)})` : "transparent";
+                return `<td style="background:${bg}">${n}</td>`;
+              })
+              .join("");
+            return `<tr><th>${short[i]}</th>${cells}</tr>`;
+          })
+          .join("");
+
+        const weak = t.accuracy < Math.max(0.5, t.chance * 1.6);
+        return `
+          <div class="eval-card">
+            <div class="head">
+              <span class="name">${t.label}</span>
+              <span class="acc" style="color:${accColor(t.accuracy)}">${(t.accuracy * 100).toFixed(1)}%</span>
+            </div>
+            <div class="bar"><i style="width:${Math.min(100, t.accuracy * 100).toFixed(1)}%; background:${accColor(t.accuracy)}"></i></div>
+            <div class="meta">
+              macro-F1 ${t.macroF1.toFixed(3)} · chance ${(t.chance * 100).toFixed(0)}%<br>
+              ${t.classes.length} classes · test n=${t.testSize} · shuffled split ${rand}
+            </div>
+            <table class="matrix">${header}${rows}</table>
+            ${weak ? '<div class="note">Does not generalise to an unseen recording run — the setpoint is not recoverable from these cycle statistics.</div>' : ""}
+          </div>`;
+      })
+      .join("");
+
+    const base = data.tasks.__baseline;
+    const parts = [];
+    if (base && base.auc != null) {
+      parts.push(
+        `Unsupervised drift score (the live gauge) vs. "any condition degraded": AUC ${base.auc.toFixed(3)} — it detects that something is off, but it cannot say what.`
+      );
+    }
+    parts.push(data.method?.split ?? "");
+    parts.push(data.method?.caveat ?? "");
+    evalFoot.innerHTML = parts.filter(Boolean).map((p) => `<div>${p}</div>`).join("");
+  }
+
+  fetch("/api/model-eval")
+    .then((r) => {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then(renderModelEval)
+    .catch(() => {
+      evalNote.textContent =
+        "No evaluation results found — run `npm run evaluate <path-to-extracted-dataset>` to generate data/model-eval.json.";
+    });
+
+  // Init
+  updateLegend();
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
+  connect();
+
+  // Show the live WebSocket URL the dashboard is actually connected to.
+  $('twinLink').textContent = "ws://" + window.location.host + "/ws";
+
+  // Initial draw
+  drawChart();
+})();
+</script>
+</body>
+</html>

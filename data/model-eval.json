@@ -1,0 +1,764 @@
+{
+  "generatedAt": "2026-10-29T12:25:48.544Z",
+  "dataset": {
+    "name": "Condition monitoring of hydraulic systems (ZeMA test rig)",
+    "doi": "10.24432/C5CW21",
+    "cycles": 2205,
+    "channels": [
+      "PS1",
+      "PS2",
+      "PS3",
+      "PS4",
+      "PS5",
+      "PS6",
+      "EPS1",
+      "FS1",
+      "FS2",
+      "TS1",
+      "TS2",
+      "TS3",
+      "TS4",
+      "VS1",
+      "CE",
+      "CP",
+      "SE"
+    ]
+  },
+  "method": {
+    "features": "mean, std, p10, p50, p90, rms, slope, skew, kurt per channel, plus 8-band spectral power and dominant frequency for PS1, PS2, PS3, EPS1, FS1, FS2 (207 features per cycle), computed from the raw high-rate signals",
+    "split": "blocked 80/20 holdout: whole contiguous recording runs are held out per class, so no test cycle is a near-duplicate of a training cycle. A stratified random split is reported alongside for reference, because it is what inflates most published numbers on this dataset.",
+    "model": "multinomial logistic regression (softmax), L2 regularised, inverse-frequency class weights",
+    "caveat": "Labels describe conditions set by the experimenter, not failures observed in service. The numbers show that sensor data identifies these four rig conditions; they do not prove transfer to another machine."
+  },
+  "order": [
+    "cooler",
+    "valve",
+    "pump",
+    "accumulator"
+  ],
+  "tasks": {
+    "cooler": {
+      "label": "Cooler condition",
+      "classes": [
+        "3% cooling",
+        "20% cooling",
+        "100% cooling"
+      ],
+      "classValues": [
+        3,
+        20,
+        100
+      ],
+      "chance": 0.3333,
+      "accuracy": 1,
+      "macroF1": 1,
+      "trainSize": 1765,
+      "testSize": 440,
+      "confusion": [
+        [
+          146,
+          0,
+          0
+        ],
+        [
+          0,
+          146,
+          0
+        ],
+        [
+          0,
+          0,
+          148
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "3% cooling",
+          "value": 3,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "support": 146
+        },
+        {
+          "label": "20% cooling",
+          "value": 20,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "support": 146
+        },
+        {
+          "label": "100% cooling",
+          "value": 100,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "support": 148
+        }
+      ],
+      "drivers": [
+        {
+          "class": "3% cooling",
+          "features": [
+            {
+              "name": "TS1.std",
+              "weight": 0.279
+            },
+            {
+              "name": "TS2.std",
+              "weight": 0.276
+            },
+            {
+              "name": "PS1.band1",
+              "weight": 0.251
+            },
+            {
+              "name": "TS1.slope",
+              "weight": 0.238
+            },
+            {
+              "name": "FS2.std",
+              "weight": 0.232
+            },
+            {
+              "name": "PS1.band3",
+              "weight": 0.215
+            }
+          ]
+        },
+        {
+          "class": "20% cooling",
+          "features": [
+            {
+              "name": "PS3.std",
+              "weight": -0.264
+            },
+            {
+              "name": "FS2.band2",
+              "weight": 0.234
+            },
+            {
+              "name": "PS4.p90",
+              "weight": -0.232
+            },
+            {
+              "name": "FS2.band5",
+              "weight": -0.226
+            },
+            {
+              "name": "PS1.band1",
+              "weight": -0.225
+            },
+            {
+              "name": "PS4.rms",
+              "weight": -0.225
+            }
+          ]
+        },
+        {
+          "class": "100% cooling",
+          "features": [
+            {
+              "name": "PS4.p90",
+              "weight": 0.24
+            },
+            {
+              "name": "CE.p50",
+              "weight": 0.239
+            },
+            {
+              "name": "CE.mean",
+              "weight": 0.238
+            },
+            {
+              "name": "CE.p10",
+              "weight": 0.238
+            },
+            {
+              "name": "CE.p90",
+              "weight": 0.238
+            },
+            {
+              "name": "CE.rms",
+              "weight": 0.238
+            }
+          ]
+        }
+      ],
+      "randomSplit": {
+        "accuracy": 0.9977,
+        "macroF1": 0.9977,
+        "note": "stratified random split — optimistic, because adjacent cycles from the same condition block are near-duplicates"
+      }
+    },
+    "valve": {
+      "label": "Valve condition",
+      "classes": [
+        "73% switching",
+        "80% switching",
+        "90% switching",
+        "100% switching"
+      ],
+      "classValues": [
+        73,
+        80,
+        90,
+        100
+      ],
+      "chance": 0.25,
+      "accuracy": 0.8856,
+      "macroF1": 0.8363,
+      "trainSize": 1698,
+      "testSize": 507,
+      "confusion": [
+        [
+          65,
+          2,
+          2,
+          1
+        ],
+        [
+          12,
+          51,
+          5,
+          2
+        ],
+        [
+          1,
+          7,
+          56,
+          6
+        ],
+        [
+          0,
+          0,
+          20,
+          277
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "73% switching",
+          "value": 73,
+          "precision": 0.8333,
+          "recall": 0.9286,
+          "f1": 0.8784,
+          "support": 70
+        },
+        {
+          "label": "80% switching",
+          "value": 80,
+          "precision": 0.85,
+          "recall": 0.7286,
+          "f1": 0.7846,
+          "support": 70
+        },
+        {
+          "label": "90% switching",
+          "value": 90,
+          "precision": 0.6747,
+          "recall": 0.8,
+          "f1": 0.732,
+          "support": 70
+        },
+        {
+          "label": "100% switching",
+          "value": 100,
+          "precision": 0.9685,
+          "recall": 0.9327,
+          "f1": 0.9503,
+          "support": 297
+        }
+      ],
+      "drivers": [
+        {
+          "class": "73% switching",
+          "features": [
+            {
+              "name": "PS2.band2",
+              "weight": -2.504
+            },
+            {
+              "name": "PS2.band0",
+              "weight": 1.762
+            },
+            {
+              "name": "PS2.band1",
+              "weight": -1.622
+            },
+            {
+              "name": "FS1.band2",
+              "weight": -1.549
+            },
+            {
+              "name": "SE.slope",
+              "weight": 1.238
+            },
+            {
+              "name": "FS1.band1",
+              "weight": -1.172
+            }
+          ]
+        },
+        {
+          "class": "80% switching",
+          "features": [
+            {
+              "name": "PS2.band2",
+              "weight": -1.615
+            },
+            {
+              "name": "FS1.band2",
+              "weight": 1.352
+            },
+            {
+              "name": "PS2.band0",
+              "weight": 1.339
+            },
+            {
+              "name": "PS2.band1",
+              "weight": -1.278
+            },
+            {
+              "name": "FS1.band5",
+              "weight": -0.633
+            },
+            {
+              "name": "FS1.band7",
+              "weight": -0.615
+            }
+          ]
+        },
+        {
+          "class": "90% switching",
+          "features": [
+            {
+              "name": "PS2.band2",
+              "weight": 1.826
+            },
+            {
+              "name": "FS1.band2",
+              "weight": 1.386
+            },
+            {
+              "name": "FS1.band1",
+              "weight": 1.344
+            },
+            {
+              "name": "FS1.band0",
+              "weight": -1.099
+            },
+            {
+              "name": "SE.slope",
+              "weight": -0.813
+            },
+            {
+              "name": "PS2.band0",
+              "weight": -0.718
+            }
+          ]
+        },
+        {
+          "class": "100% switching",
+          "features": [
+            {
+              "name": "PS2.band0",
+              "weight": -2.382
+            },
+            {
+              "name": "PS2.band1",
+              "weight": 2.349
+            },
+            {
+              "name": "PS2.band2",
+              "weight": 2.293
+            },
+            {
+              "name": "FS1.band2",
+              "weight": -1.19
+            },
+            {
+              "name": "PS2.band7",
+              "weight": -1.039
+            },
+            {
+              "name": "PS2.band3",
+              "weight": 0.919
+            }
+          ]
+        }
+      ],
+      "randomSplit": {
+        "accuracy": 0.9342,
+        "macroF1": 0.914,
+        "note": "stratified random split — optimistic, because adjacent cycles from the same condition block are near-duplicates"
+      }
+    },
+    "pump": {
+      "label": "Pump leakage",
+      "classes": [
+        "none",
+        "weak",
+        "severe"
+      ],
+      "classValues": [
+        0,
+        1,
+        2
+      ],
+      "chance": 0.3333,
+      "accuracy": 0.9764,
+      "macroF1": 0.9568,
+      "trainSize": 1739,
+      "testSize": 466,
+      "confusion": [
+        [
+          301,
+          1,
+          0
+        ],
+        [
+          0,
+          75,
+          7
+        ],
+        [
+          0,
+          3,
+          79
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "none",
+          "value": 0,
+          "precision": 1,
+          "recall": 0.9967,
+          "f1": 0.9983,
+          "support": 302
+        },
+        {
+          "label": "weak",
+          "value": 1,
+          "precision": 0.9494,
+          "recall": 0.9146,
+          "f1": 0.9317,
+          "support": 82
+        },
+        {
+          "label": "severe",
+          "value": 2,
+          "precision": 0.9186,
+          "recall": 0.9634,
+          "f1": 0.9405,
+          "support": 82
+        }
+      ],
+      "drivers": [
+        {
+          "class": "none",
+          "features": [
+            {
+              "name": "SE.p90",
+              "weight": 2.547
+            },
+            {
+              "name": "FS1.p90",
+              "weight": 2.27
+            },
+            {
+              "name": "PS3.std",
+              "weight": 0.749
+            },
+            {
+              "name": "PS1.p90",
+              "weight": 0.704
+            },
+            {
+              "name": "PS3.p90",
+              "weight": 0.683
+            },
+            {
+              "name": "SE.std",
+              "weight": 0.631
+            }
+          ]
+        },
+        {
+          "class": "weak",
+          "features": [
+            {
+              "name": "TS1.std",
+              "weight": -1.065
+            },
+            {
+              "name": "EPS1.p90",
+              "weight": -1.043
+            },
+            {
+              "name": "VS1.kurt",
+              "weight": -1.006
+            },
+            {
+              "name": "VS1.std",
+              "weight": -0.795
+            },
+            {
+              "name": "EPS1.p10",
+              "weight": -0.764
+            },
+            {
+              "name": "VS1.slope",
+              "weight": 0.756
+            }
+          ]
+        },
+        {
+          "class": "severe",
+          "features": [
+            {
+              "name": "SE.p90",
+              "weight": -3.066
+            },
+            {
+              "name": "FS1.p90",
+              "weight": -2.44
+            },
+            {
+              "name": "EPS1.p90",
+              "weight": 1.568
+            },
+            {
+              "name": "EPS1.p10",
+              "weight": 1.115
+            },
+            {
+              "name": "PS3.std",
+              "weight": -1.067
+            },
+            {
+              "name": "TS1.std",
+              "weight": 0.906
+            }
+          ]
+        }
+      ],
+      "randomSplit": {
+        "accuracy": 0.9909,
+        "macroF1": 0.9864,
+        "note": "stratified random split — optimistic, because adjacent cycles from the same condition block are near-duplicates"
+      }
+    },
+    "accumulator": {
+      "label": "Accumulator pressure",
+      "classes": [
+        "90 bar",
+        "100 bar",
+        "115 bar",
+        "130 bar"
+      ],
+      "classValues": [
+        90,
+        100,
+        115,
+        130
+      ],
+      "chance": 0.25,
+      "accuracy": 0.2625,
+      "macroF1": 0.104,
+      "trainSize": 1664,
+      "testSize": 541,
+      "confusion": [
+        [
+          142,
+          0,
+          0,
+          0
+        ],
+        [
+          133,
+          0,
+          0,
+          0
+        ],
+        [
+          133,
+          0,
+          0,
+          0
+        ],
+        [
+          133,
+          0,
+          0,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "90 bar",
+          "value": 90,
+          "precision": 0.2625,
+          "recall": 1,
+          "f1": 0.4158,
+          "support": 142
+        },
+        {
+          "label": "100 bar",
+          "value": 100,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "support": 133
+        },
+        {
+          "label": "115 bar",
+          "value": 115,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "support": 133
+        },
+        {
+          "label": "130 bar",
+          "value": 130,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "support": 133
+        }
+      ],
+      "drivers": [
+        {
+          "class": "90 bar",
+          "features": [
+            {
+              "name": "PS3.std",
+              "weight": -1.883
+            },
+            {
+              "name": "FS1.band1",
+              "weight": -1.237
+            },
+            {
+              "name": "PS3.kurt",
+              "weight": -1.184
+            },
+            {
+              "name": "PS3.skew",
+              "weight": -1.06
+            },
+            {
+              "name": "FS1.kurt",
+              "weight": -0.88
+            },
+            {
+              "name": "FS1.std",
+              "weight": -0.727
+            }
+          ]
+        },
+        {
+          "class": "100 bar",
+          "features": [
+            {
+              "name": "PS3.p90",
+              "weight": -1.239
+            },
+            {
+              "name": "PS3.p10",
+              "weight": -1.11
+            },
+            {
+              "name": "FS2.std",
+              "weight": 1.061
+            },
+            {
+              "name": "PS5.std",
+              "weight": -0.854
+            },
+            {
+              "name": "PS3.kurt",
+              "weight": 0.797
+            },
+            {
+              "name": "PS6.std",
+              "weight": 0.761
+            }
+          ]
+        },
+        {
+          "class": "115 bar",
+          "features": [
+            {
+              "name": "PS3.std",
+              "weight": 2.01
+            },
+            {
+              "name": "FS2.std",
+              "weight": -1.408
+            },
+            {
+              "name": "PS6.skew",
+              "weight": 1.27
+            },
+            {
+              "name": "FS1.kurt",
+              "weight": 0.915
+            },
+            {
+              "name": "PS3.p10",
+              "weight": 0.911
+            },
+            {
+              "name": "PS5.std",
+              "weight": 0.823
+            }
+          ]
+        },
+        {
+          "class": "130 bar",
+          "features": [
+            {
+              "name": "FS1.band1",
+              "weight": 1.099
+            },
+            {
+              "name": "PS1.band3",
+              "weight": 0.892
+            },
+            {
+              "name": "PS1.band1",
+              "weight": 0.813
+            },
+            {
+              "name": "FS1.band2",
+              "weight": -0.623
+            },
+            {
+              "name": "PS3.p10",
+              "weight": 0.619
+            },
+            {
+              "name": "FS1.band3",
+              "weight": -0.609
+            }
+          ]
+        }
+      ],
+      "randomSplit": {
+        "accuracy": 0.8937,
+        "macroF1": 0.8818,
+        "note": "stratified random split — optimistic, because adjacent cycles from the same condition block are near-duplicates"
+      }
+    },
+    "__baseline": {
+      "label": "Unsupervised drift score (what the dashboard shows)",
+      "auc": 0.9036,
+      "positives": 1912,
+      "negatives": 293,
+      "note": "Same form as the dashboard anomaly score (mean-normalised |slope| + spread) on PS1, VS1 and EPS1, scored against 'any condition degraded'. Threshold-free, so AUC is the fair comparison."
+    }
+  }
+}
